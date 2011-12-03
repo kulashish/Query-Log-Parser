@@ -1,0 +1,1 @@
+The Query Log Parser works with the IITB Intranet proxy log file. It filters the spam, extracts the queries and URLs into a Query log.

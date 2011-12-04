@@ -22,21 +22,24 @@ public class QueryLogLine {
 	private String contentType;
 
 	public QueryLogLine(String line) {
-//		System.out.println("Creating Query Line");
+		// System.out.println("Creating Query Line");
 		this.line = line;
+		// System.out.println(line);
 		StringTokenizer tokenizer = new StringTokenizer(line);
 		List<String> tokens = new ArrayList<String>();
 		while (tokenizer.hasMoreElements())
 			tokens.add(tokenizer.nextToken());
-		if (null != tokens && tokens.size() > 0) {
-			setMonth(tokens.get(MONTH_INDEX));
-			setDay(tokens.get(DAY_INDEX));
-			setTime(tokens.get(TIME_INDEX));
-			setIP(tokens.get(IP_INDEX));
-			setURL(tokens.get(URL_INDEX));
-			setContentType(tokens.get(CONTENTTYPE_INDEX));
+		int numTokens = tokens.size();
+		if (null != tokens) {
+			setMonth(numTokens > MONTH_INDEX ? tokens.get(MONTH_INDEX) : null);
+			setDay(numTokens > DAY_INDEX ? tokens.get(DAY_INDEX) : null);
+			setTime(numTokens > TIME_INDEX ? tokens.get(TIME_INDEX) : null);
+			setIP(numTokens > IP_INDEX ? tokens.get(IP_INDEX) : null);
+			setURL(numTokens > URL_INDEX ? tokens.get(URL_INDEX) : null);
+			setContentType(numTokens > CONTENTTYPE_INDEX ? tokens
+					.get(CONTENTTYPE_INDEX) : null);
 		}
-//		System.out.println("Created Query Line");
+		// System.out.println("Created Query Line");
 	}
 
 	public String getLine() {

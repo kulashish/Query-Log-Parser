@@ -10,8 +10,14 @@ public abstract class QueryLogLineFilter {
 
 	public boolean applyFilter(String text) {
 		boolean result = false;
-		for (String filter : filterText)
-			result |= text.indexOf(filter) != -1;
+		/*
+		 * Let the text pass if it is null
+		 */
+		if (null != text)
+			for (String filter : filterText)
+				result |= text.indexOf(filter) != -1;
+		else
+			result = true;
 		return result;
 	}
 

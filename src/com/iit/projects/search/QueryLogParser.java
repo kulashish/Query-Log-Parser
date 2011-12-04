@@ -2,8 +2,8 @@ package com.iit.projects.search;
 
 public class QueryLogParser {
 
-	private static final String QUERYLOG_FILE = "C:\\Documents and Settings\\Administrator\\My Documents\\Search\\QLog.log";
-	private static final String OUTPUT_FILE = "C:\\Documents and Settings\\Administrator\\My Documents\\Search\\QLog_out.log";
+	private static final String QUERYLOG_FILE = "C:\\Documents and Settings\\Administrator\\My Documents\\Search\\combined-sample.log";
+	private static final String OUTPUT_FILE = "C:\\Documents and Settings\\Administrator\\My Documents\\Search\\combined-sample_out.log";
 	private static final String[] SPAM_WORDS = { "rediff", "facebook", "movie" };
 	private static final String QUERY_STRING = "search?";
 	private static final String HTML_CONTENT = "text/html";

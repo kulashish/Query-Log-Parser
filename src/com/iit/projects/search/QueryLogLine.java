@@ -94,4 +94,11 @@ public class QueryLogLine {
 		this.contentType = contentType;
 	}
 
+	public String getQuery() {
+		int startIdx = URL.indexOf("q=") + 2;
+		int endIdx = URL.indexOf('&', startIdx);
+		return startIdx != -1 ? endIdx != -1 ? URL.substring(startIdx, endIdx)
+				: URL.substring(startIdx) : null;
+	}
+
 }

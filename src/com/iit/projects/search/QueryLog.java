@@ -17,6 +17,7 @@ public class QueryLog {
 	private String filePath;
 	private BufferedReader reader;
 	private Map<String, List<QueryLogLine>> logGroupedByIPMap;
+	private BufferedWriter queryFileWriter;
 
 	public QueryLog() {
 
@@ -25,6 +26,29 @@ public class QueryLog {
 	public QueryLog(String path) throws QueryLogIOException {
 		filePath = path;
 		setReader();
+	}
+
+	public QueryLog(String path, String queryFile) throws QueryLogIOException,
+			QueryLogOutputException {
+		this(path);
+		try {
+			queryFileWriter = new BufferedWriter(new FileWriter(queryFile));
+		} catch (IOException e) {
+			throw new QueryLogOutputException(e);
+		}
+	}
+
+	public void outputQuery(QueryLogLine line) throws QueryLogOutputException {
+		String query = null;
+		if (null != line)
+			query = line.getQuery();
+		if (null != query)
+			try {
+				queryFileWriter.write(query);
+				queryFileWriter.newLine();
+			} catch (IOException e) {
+				throw new QueryLogOutputException(e);
+			}
 	}
 
 	public void setFilePath(String filePath) {
@@ -68,12 +92,18 @@ public class QueryLog {
 		queryLines.add(line);
 	}
 
-	public void close() throws QueryLogIOException {
+	public void close() throws QueryLogIOException, QueryLogOutputException {
 		if (null != reader)
 			try {
 				reader.close();
 			} catch (IOException e) {
 				throw new QueryLogIOException(e);
+			}
+		if (null != queryFileWriter)
+			try {
+				queryFileWriter.close();
+			} catch (IOException e) {
+				throw new QueryLogOutputException(e);
 			}
 
 	}

@@ -1,5 +1,8 @@
 package com.iit.projects.search;
 
+import ml.options.Options;
+import ml.options.Options.Multiplicity;
+import ml.options.Options.Separator;
 
 public class QueryLogParser {
 
@@ -12,33 +15,61 @@ public class QueryLogParser {
 	private static final String HTML_CONTENT = "text/html";
 	private static final int NUMBER_ARGS = 2;
 
-	private String queryLogFile;
 	private String outFile;
+
+	private QueryLog log;
 
 	public QueryLogParser() {
 
 	}
 
-	public QueryLogParser(String inFilePath, String outFilePath) {
-		queryLogFile = inFilePath;
+	public QueryLogParser(String inFilePath, String outFilePath) throws QueryLogIOException {
+		log = new QueryLog(inFilePath);
 		outFile = outFilePath;
+	}
+
+	public QueryLogParser(String inFilePath, String outFilePath,
+			String queryFile) throws QueryLogIOException,
+			QueryLogOutputException {
+		this(inFilePath, outFilePath);
+		if (queryFile != null)
+			log = new QueryLog(inFilePath, queryFile);
 	}
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		if (args.length != NUMBER_ARGS) {
-			System.err.println("Usage: QueryLogParser <inlogfile> <outfile>");
+		Options options = new Options(args, NUMBER_ARGS);
+		options.getSet().addOption("q", Separator.EQUALS,
+				Multiplicity.ZERO_OR_ONE);
+		if (!options.check()) {
+			System.err.println("Usage: QueryLogParser [-q=<queryoutfile>] <inlogfile> <outlogfile>");
 			System.exit(1);
 		}
-		new QueryLogParser(args[0], args[1]).parse();
+		String queryFile = null;
+		if (options.getSet().isSet("q"))
+			queryFile = options.getSet().getOption("q").getResultValue(0);
+		try {
+			if (null != queryFile)
+				new QueryLogParser(options.getSet().getData().get(0), options
+						.getSet().getData().get(1), queryFile).parse(true);
+			else
+				new QueryLogParser(options.getSet().getData().get(0), options
+						.getSet().getData().get(1)).parse();
+		} catch (QueryLogIOException e) {
+			e.printStackTrace();
+		} catch (QueryLogOutputException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void parse() {
-		QueryLog log = null;
+		parse(false);
+	}
+
+	public void parse(boolean outputQueries) {
 		try {
-			log = new QueryLog(queryLogFile);
 			QueryLogLineFilter spamFilter = new QueryURLFilter();
 			spamFilter.setFilterText(SPAM_WORDS);
 
@@ -49,21 +80,25 @@ public class QueryLogParser {
 			htmlFilter.setFilterText(new String[] { HTML_CONTENT });
 
 			QueryLogLine line = null;
+			boolean blnQuery = false;
+			boolean blnHtml = false;
 
 			while ((line = log.getNextLine()) != null) {
 				if (spamFilter.applyFilter(line))
 					continue;
-				if (queryFilter.applyFilter(line)
-						|| htmlFilter.applyFilter(line))
+				blnQuery = queryFilter.applyFilter(line);
+				blnHtml = htmlFilter.applyFilter(line);
+				if (blnHtml) {
 					log.groupByIP(line);
+					if (outputQueries && blnQuery) {
+						log.outputQuery(line);
+					}
+				}
 			}
 			log.close();
-
+			log.unmarshall(outFile);
 		} catch (QueryLogIOException e) {
 			e.printStackTrace();
-		}
-		try {
-			log.unmarshall(outFile);
 		} catch (QueryLogOutputException e) {
 			e.printStackTrace();
 		}

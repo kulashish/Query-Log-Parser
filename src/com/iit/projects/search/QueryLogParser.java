@@ -15,25 +15,21 @@ public class QueryLogParser {
 	private static final String HTML_CONTENT = "text/html";
 	private static final int NUMBER_ARGS = 2;
 
-	private String outFile;
-
 	private QueryLog log;
 
 	public QueryLogParser() {
 
 	}
 
-	public QueryLogParser(String inFilePath, String outFilePath) throws QueryLogIOException {
-		log = new QueryLog(inFilePath);
-		outFile = outFilePath;
+	public QueryLogParser(String inFilePath, String outFilePath)
+			throws QueryLogIOException, QueryLogOutputException {
+		log = new QueryLog(inFilePath, outFilePath);
 	}
 
 	public QueryLogParser(String inFilePath, String outFilePath,
 			String queryFile) throws QueryLogIOException,
 			QueryLogOutputException {
-		this(inFilePath, outFilePath);
-		if (queryFile != null)
-			log = new QueryLog(inFilePath, queryFile);
+		log = new QueryLog(inFilePath, queryFile, outFilePath);
 	}
 
 	/**
@@ -44,7 +40,8 @@ public class QueryLogParser {
 		options.getSet().addOption("q", Separator.EQUALS,
 				Multiplicity.ZERO_OR_ONE);
 		if (!options.check()) {
-			System.err.println("Usage: QueryLogParser [-q=<queryoutfile>] <inlogfile> <outlogfile>");
+			System.err
+					.println("Usage: QueryLogParser [-q=<queryoutfile>] <inlogfile> <outlogfile>");
 			System.exit(1);
 		}
 		String queryFile = null;
@@ -64,44 +61,40 @@ public class QueryLogParser {
 		}
 	}
 
-	public void parse() {
+	public void parse() throws QueryLogOutputException, QueryLogIOException {
 		parse(false);
 	}
 
-	public void parse(boolean outputQueries) {
-		try {
-			QueryLogLineFilter spamFilter = new QueryURLFilter();
-			spamFilter.setFilterText(SPAM_WORDS);
+	public void parse(boolean outputQueries) throws QueryLogOutputException,
+			QueryLogIOException {
 
-			QueryLogLineFilter queryFilter = new QueryURLFilter();
-			queryFilter.setFilterText(new String[] { QUERY_STRING });
+		QueryLogLineFilter spamFilter = new QueryURLFilter();
+		spamFilter.setFilterText(SPAM_WORDS);
 
-			QueryLogLineFilter htmlFilter = new QueryContentTypeFilter();
-			htmlFilter.setFilterText(new String[] { HTML_CONTENT });
+		QueryLogLineFilter queryFilter = new QueryURLFilter();
+		queryFilter.setFilterText(new String[] { QUERY_STRING });
 
-			QueryLogLine line = null;
-			boolean blnQuery = false;
-			boolean blnHtml = false;
+		QueryLogLineFilter htmlFilter = new QueryContentTypeFilter();
+		htmlFilter.setFilterText(new String[] { HTML_CONTENT });
 
-			while ((line = log.getNextLine()) != null) {
-				if (spamFilter.applyFilter(line))
-					continue;
-				blnQuery = queryFilter.applyFilter(line);
-				blnHtml = htmlFilter.applyFilter(line);
-				if (blnHtml) {
-					log.groupByIP(line);
-					if (outputQueries && blnQuery) {
-						log.outputQuery(line);
-					}
+		QueryLogLine line = null;
+		boolean blnQuery = false;
+		boolean blnHtml = false;
+
+		while ((line = log.getNextLine()) != null) {
+			if (spamFilter.applyFilter(line))
+				continue;
+			blnQuery = queryFilter.applyFilter(line);
+			blnHtml = htmlFilter.applyFilter(line);
+			if (blnHtml) {
+				log.groupByIP(line);
+				if (outputQueries && blnQuery) {
+					log.outputQuery(line);
 				}
 			}
-			log.close();
-			log.unmarshall(outFile);
-		} catch (QueryLogIOException e) {
-			e.printStackTrace();
-		} catch (QueryLogOutputException e) {
-			e.printStackTrace();
 		}
+		log.unmarshall(true);
+		log.close();
 	}
 
 }

@@ -7,17 +7,22 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class QueryLog {
+	private static final int MAX_QUERYLOG_BATCH = 1024 * 1024 * 10;
+	// private static final int MAX_QUERYLOG_BATCH = 5;
+	private static final float BATCH_FRACTION = 0.5f;
 	private String filePath;
 	private BufferedReader reader;
 	private Map<String, List<QueryLogLine>> logGroupedByIPMap;
 	private BufferedWriter queryFileWriter;
+	private BufferedWriter outFileWriter;
+	private int numLinesInMap = 0;
 
 	public QueryLog() {
 
@@ -33,6 +38,16 @@ public class QueryLog {
 		this(path);
 		try {
 			queryFileWriter = new BufferedWriter(new FileWriter(queryFile));
+		} catch (IOException e) {
+			throw new QueryLogOutputException(e);
+		}
+	}
+
+	public QueryLog(String path, String queryFile, String outFile)
+			throws QueryLogIOException, QueryLogOutputException {
+		this(path, queryFile);
+		try {
+			outFileWriter = new BufferedWriter(new FileWriter(outFile));
 		} catch (IOException e) {
 			throw new QueryLogOutputException(e);
 		}
@@ -81,15 +96,20 @@ public class QueryLog {
 		return queryLine;
 	}
 
-	public void groupByIP(QueryLogLine line) {
+	public void groupByIP(QueryLogLine line) throws QueryLogOutputException {
 		if (null == logGroupedByIPMap)
-			logGroupedByIPMap = new HashMap<String, List<QueryLogLine>>();
+			logGroupedByIPMap = new LinkedHashMap<String, List<QueryLogLine>>(
+					16, 0.75f, true);
 		List<QueryLogLine> queryLines = logGroupedByIPMap.get(line.getIP());
 		if (null == queryLines) {
 			queryLines = new ArrayList<QueryLogLine>();
 			logGroupedByIPMap.put(line.getIP(), queryLines);
 		}
 		queryLines.add(line);
+		if (++numLinesInMap >= MAX_QUERYLOG_BATCH) {
+			unmarshall(false);
+			numLinesInMap = 0;
+		}
 	}
 
 	public void close() throws QueryLogIOException, QueryLogOutputException {
@@ -105,24 +125,32 @@ public class QueryLog {
 			} catch (IOException e) {
 				throw new QueryLogOutputException(e);
 			}
-
+		if (null != outFileWriter)
+			try {
+				outFileWriter.close();
+			} catch (IOException e) {
+				throw new QueryLogOutputException(e);
+			}
 	}
 
-	public void unmarshall(String outputFile) throws QueryLogOutputException {
-		BufferedWriter writer = null;
+	public void unmarshall(boolean unmarshallAll)
+			throws QueryLogOutputException {
 		try {
-			writer = new BufferedWriter(new FileWriter(outputFile));
 			Set<String> IPs = logGroupedByIPMap.keySet();
 			Iterator<String> IPIter = IPs.iterator();
 			List<QueryLogLine> lines = null;
-			while (IPIter.hasNext()) {
-				lines = logGroupedByIPMap.get(IPIter.next());
+			int numUnmarshall = unmarshallAll ? IPs.size()
+					: (int) (IPs.size() * BATCH_FRACTION);
+			String key = null;
+			while (IPIter.hasNext() && numUnmarshall-- > 0) {
+				key = IPIter.next();
+				lines = logGroupedByIPMap.get(key);
 				for (QueryLogLine line : lines) {
-					writer.write(line.getLine());
-					writer.newLine();
+					outFileWriter.write(line.getLine());
+					outFileWriter.newLine();
 				}
+				logGroupedByIPMap.remove(key);
 			}
-			writer.close();
 		} catch (IOException e) {
 			throw new QueryLogOutputException(e);
 		}

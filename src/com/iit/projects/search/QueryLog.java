@@ -11,10 +11,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
 public class QueryLog {
-	private static final int MAX_QUERYLOG_BATCH = 1024 * 1024 * 10;
+	private static final int MAX_QUERYLOG_BATCH = 1000;
 	// private static final int MAX_QUERYLOG_BATCH = 5;
 	private static final float BATCH_FRACTION = 0.5f;
 	private String filePath;
@@ -136,20 +136,20 @@ public class QueryLog {
 	public void unmarshall(boolean unmarshallAll)
 			throws QueryLogOutputException {
 		try {
-			Set<String> IPs = logGroupedByIPMap.keySet();
-			Iterator<String> IPIter = IPs.iterator();
+			Iterator<Entry<String, List<QueryLogLine>>> iter = logGroupedByIPMap
+					.entrySet().iterator();
 			List<QueryLogLine> lines = null;
-			int numUnmarshall = unmarshallAll ? IPs.size()
-					: (int) (IPs.size() * BATCH_FRACTION);
-			String key = null;
-			while (IPIter.hasNext() && numUnmarshall-- > 0) {
-				key = IPIter.next();
-				lines = logGroupedByIPMap.get(key);
+			int numUnmarshall = unmarshallAll ? logGroupedByIPMap.size()
+					: (int) (logGroupedByIPMap.size() * BATCH_FRACTION);
+			Entry entry = null;
+			while (iter.hasNext() && numUnmarshall-- > 0) {
+				entry = iter.next();
+				lines = (List<QueryLogLine>) entry.getValue();
 				for (QueryLogLine line : lines) {
 					outFileWriter.write(line.getLine());
 					outFileWriter.newLine();
 				}
-				logGroupedByIPMap.remove(key);
+				iter.remove();
 			}
 		} catch (IOException e) {
 			throw new QueryLogOutputException(e);

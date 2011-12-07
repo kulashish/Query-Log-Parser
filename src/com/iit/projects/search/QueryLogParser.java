@@ -6,30 +6,28 @@ import ml.options.Options.Separator;
 
 public class QueryLogParser {
 
-	// private static final String QUERYLOG_FILE =
-	// "C:\\Documents and Settings\\Administrator\\My Documents\\Search\\combined-sample.log";
-	// private static final String OUTPUT_FILE =
-	// "C:\\Documents and Settings\\Administrator\\My Documents\\Search\\combined-sample_out.log";
-	private static final String[] SPAM_WORDS = { "rediff", "facebook", "movie" };
-	private static final String QUERY_STRING = "search?";
-	private static final String HTML_CONTENT = "text/html";
 	private static final int NUMBER_ARGS = 2;
 
 	private QueryLog log;
 
 	public QueryLogParser() {
-
-	}
-
-	public QueryLogParser(String inFilePath, String outFilePath)
-			throws QueryLogIOException, QueryLogOutputException {
-		log = new QueryLog(inFilePath, outFilePath);
+		log = new QueryLog();
 	}
 
 	public QueryLogParser(String inFilePath, String outFilePath,
-			String queryFile) throws QueryLogIOException,
+			boolean blnFormat) throws QueryLogIOException,
 			QueryLogOutputException {
-		log = new QueryLog(inFilePath, queryFile, outFilePath);
+		log = new QueryLog();
+		log.setReader(inFilePath);
+		log.setWriter(blnFormat ? new QueryURLWriter(outFilePath)
+				: new QueryLogWriter(outFilePath));
+	}
+
+	public QueryLogParser(String inFilePath, String outFilePath,
+			String queryFile, boolean blnFormat) throws QueryLogIOException,
+			QueryLogOutputException {
+		this(inFilePath, outFilePath, blnFormat);
+		log.setQueryFileWriter(queryFile);
 	}
 
 	/**
@@ -39,21 +37,29 @@ public class QueryLogParser {
 		Options options = new Options(args, NUMBER_ARGS);
 		options.getSet().addOption("q", Separator.EQUALS,
 				Multiplicity.ZERO_OR_ONE);
+		options.getSet().addOption("f", Multiplicity.ZERO_OR_ONE);
+
 		if (!options.check()) {
 			System.err
-					.println("Usage: QueryLogParser [-q=<queryoutfile>] <inlogfile> <outlogfile>");
+					.println("Usage: java QueryLogParser [-q=<queryoutfile>] [-f] <inlogfile> <outlogfile>");
 			System.exit(1);
 		}
+
 		String queryFile = null;
+		boolean blnFormat = false;
 		if (options.getSet().isSet("q"))
 			queryFile = options.getSet().getOption("q").getResultValue(0);
+		if (options.getSet().isSet("f"))
+			blnFormat = true;
+
 		try {
 			if (null != queryFile)
 				new QueryLogParser(options.getSet().getData().get(0), options
-						.getSet().getData().get(1), queryFile).parse(true);
+						.getSet().getData().get(1), queryFile, blnFormat)
+						.parse(true);
 			else
 				new QueryLogParser(options.getSet().getData().get(0), options
-						.getSet().getData().get(1)).parse();
+						.getSet().getData().get(1), blnFormat).parse();
 		} catch (QueryLogIOException e) {
 			e.printStackTrace();
 		} catch (QueryLogOutputException e) {
@@ -68,14 +74,9 @@ public class QueryLogParser {
 	public void parse(boolean outputQueries) throws QueryLogOutputException,
 			QueryLogIOException {
 
-		QueryLogLineFilter spamFilter = new QueryURLFilter();
-		spamFilter.setFilterText(SPAM_WORDS);
-
+		QueryLogLineFilter spamFilter = new LogSpamFilter();
 		QueryLogLineFilter queryFilter = new QueryURLFilter();
-		queryFilter.setFilterText(new String[] { QUERY_STRING });
-
 		QueryLogLineFilter htmlFilter = new QueryContentTypeFilter();
-		htmlFilter.setFilterText(new String[] { HTML_CONTENT });
 
 		QueryLogLine line = null;
 		boolean blnQuery = false;

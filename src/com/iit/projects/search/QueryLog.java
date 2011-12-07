@@ -17,11 +17,10 @@ public class QueryLog {
 	private static final int MAX_QUERYLOG_BATCH = 1000;
 	// private static final int MAX_QUERYLOG_BATCH = 5;
 	private static final float BATCH_FRACTION = 0.5f;
-	private String filePath;
 	private BufferedReader reader;
 	private Map<String, List<QueryLogLine>> logGroupedByIPMap;
 	private BufferedWriter queryFileWriter;
-	private BufferedWriter outFileWriter;
+	private QueryLogWriter outFileWriter;
 	private int numLinesInMap = 0;
 
 	public QueryLog() {
@@ -29,25 +28,19 @@ public class QueryLog {
 	}
 
 	public QueryLog(String path) throws QueryLogIOException {
-		filePath = path;
-		setReader();
+		setReader(path);
 	}
 
 	public QueryLog(String path, String queryFile) throws QueryLogIOException,
 			QueryLogOutputException {
 		this(path);
-		try {
-			queryFileWriter = new BufferedWriter(new FileWriter(queryFile));
-		} catch (IOException e) {
-			throw new QueryLogOutputException(e);
-		}
+		setQueryFileWriter(queryFile);
 	}
 
-	public QueryLog(String path, String queryFile, String outFile)
-			throws QueryLogIOException, QueryLogOutputException {
-		this(path, queryFile);
+	public void setQueryFileWriter(String filePath)
+			throws QueryLogOutputException {
 		try {
-			outFileWriter = new BufferedWriter(new FileWriter(outFile));
+			this.queryFileWriter = new BufferedWriter(new FileWriter(filePath));
 		} catch (IOException e) {
 			throw new QueryLogOutputException(e);
 		}
@@ -66,17 +59,9 @@ public class QueryLog {
 			}
 	}
 
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
-	}
-
-	public void setReader(BufferedReader reader) {
-		this.reader = reader;
-	}
-
-	public void setReader() throws QueryLogIOException {
+	public void setReader(String inFilePath) throws QueryLogIOException {
 		try {
-			reader = new BufferedReader(new FileReader(filePath));
+			this.reader = new BufferedReader(new FileReader(inFilePath));
 		} catch (FileNotFoundException e) {
 			throw new QueryLogIOException(e);
 		}
@@ -126,34 +111,27 @@ public class QueryLog {
 				throw new QueryLogOutputException(e);
 			}
 		if (null != outFileWriter)
-			try {
-				outFileWriter.close();
-			} catch (IOException e) {
-				throw new QueryLogOutputException(e);
-			}
+			outFileWriter.close();
 	}
 
 	public void unmarshall(boolean unmarshallAll)
 			throws QueryLogOutputException {
-		try {
-			Iterator<Entry<String, List<QueryLogLine>>> iter = logGroupedByIPMap
-					.entrySet().iterator();
-			List<QueryLogLine> lines = null;
-			int numUnmarshall = unmarshallAll ? logGroupedByIPMap.size()
-					: (int) (logGroupedByIPMap.size() * BATCH_FRACTION);
-			Entry entry = null;
-			while (iter.hasNext() && numUnmarshall-- > 0) {
-				entry = iter.next();
-				lines = (List<QueryLogLine>) entry.getValue();
-				for (QueryLogLine line : lines) {
-					outFileWriter.write(line.getLine());
-					outFileWriter.newLine();
-				}
-				iter.remove();
-			}
-		} catch (IOException e) {
-			throw new QueryLogOutputException(e);
-		}
 
+		Iterator<Entry<String, List<QueryLogLine>>> iter = logGroupedByIPMap
+				.entrySet().iterator();
+		List<QueryLogLine> lines = null;
+		int numUnmarshall = unmarshallAll ? logGroupedByIPMap.size()
+				: (int) (logGroupedByIPMap.size() * BATCH_FRACTION);
+		Entry entry = null;
+		while (iter.hasNext() && numUnmarshall-- > 0) {
+			entry = iter.next();
+			lines = (List<QueryLogLine>) entry.getValue();
+			outFileWriter.writeLog((String) entry.getKey(), lines);
+			iter.remove();
+		}
+	}
+
+	public void setWriter(QueryLogWriter writer) {
+		outFileWriter = writer;
 	}
 }

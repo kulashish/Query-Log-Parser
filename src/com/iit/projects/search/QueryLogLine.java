@@ -1,8 +1,11 @@
 package com.iit.projects.search;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+
+import com.iit.projects.search.util.StringDecoder;
 
 public class QueryLogLine {
 
@@ -21,7 +24,7 @@ public class QueryLogLine {
 	private String time;
 	private String contentType;
 
-	public QueryLogLine(String line) {
+	public QueryLogLine(String line) throws QueryLogIOException {
 		// System.out.println("Creating Query Line");
 		this.line = line;
 		// System.out.println(line);
@@ -58,8 +61,16 @@ public class QueryLogLine {
 		return URL;
 	}
 
-	public void setURL(String url) {
-		URL = url;
+	public void setURL(String url) throws QueryLogIOException {
+		try {
+			// System.out.println("Before decoding : " + url);
+			URL = StringDecoder.decode(url);
+			// System.out.println("After decoding : " + URL);
+		} catch (UnsupportedEncodingException e) {
+			throw new QueryLogIOException(e);
+		} catch (IllegalArgumentException e) {
+			URL = null;
+		}
 	}
 
 	public String getMonth() {

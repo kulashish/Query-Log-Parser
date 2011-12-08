@@ -18,14 +18,18 @@ public class QueryURLWriter extends QueryLogWriter {
 		try {
 			boolean blnQueryFound = false;
 			QueryLogLineFilter queryFilter = new QueryURLFilter();
+			boolean blnQuery = false;
 			for (QueryLogLine line : lines) {
+				blnQuery = queryFilter.applyFilter(line.getLine());
 				if (!blnQueryFound)
-					if (!queryFilter.applyFilter(line.getLine()))
+					if (!blnQuery)
 						continue;
 					else {
 						blnQueryFound = true;
 						writeQuery(line);
 					}
+				else if (blnQuery)
+					writeQuery(line);
 				else
 					writeURL(line);
 			}
@@ -36,7 +40,8 @@ public class QueryURLWriter extends QueryLogWriter {
 
 	private void writeURL(QueryLogLine line) throws IOException {
 		writeCommonLineDetails(line);
-		writer.write(line.getURL());
+		if (null != line.getURL())
+			writer.write(line.getURL());
 		writer.newLine();
 	}
 

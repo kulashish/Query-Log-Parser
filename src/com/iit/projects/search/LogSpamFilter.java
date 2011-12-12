@@ -2,7 +2,7 @@ package com.iit.projects.search;
 
 public class LogSpamFilter extends QueryLogLineFilter {
 
-	private static final String[] SPAM_WORDS = { "rediff", "facebook", "movie" };
+	private static final String[] SPAM_WORDS = { "rediff", "facebook", "movie", ".jpg", ".png", ".js" };
 
 	public LogSpamFilter() {
 		super();
@@ -11,8 +11,7 @@ public class LogSpamFilter extends QueryLogLineFilter {
 
 	@Override
 	public boolean applyFilter(QueryLogLine line) {
-		// TODO Auto-generated method stub
-		return false;
+		return super.applyFilter(line.getLine());
 	}
 
 }

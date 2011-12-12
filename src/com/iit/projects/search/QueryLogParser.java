@@ -77,17 +77,20 @@ public class QueryLogParser {
 		QueryLogLineFilter spamFilter = new LogSpamFilter();
 		QueryLogLineFilter queryFilter = new QueryURLFilter();
 		QueryLogLineFilter htmlFilter = new QueryContentTypeFilter();
+		QueryLogLineFilter academicFilter = new AcademicVocabFilter();
 
 		QueryLogLine line = null;
 		boolean blnQuery = false;
 		boolean blnHtml = false;
+		boolean blnAcademic = false;
 
 		while ((line = log.getNextLine()) != null) {
 			if (spamFilter.applyFilter(line))
 				continue;
 			blnQuery = queryFilter.applyFilter(line);
 			blnHtml = htmlFilter.applyFilter(line);
-			if (blnHtml) {
+			blnAcademic = academicFilter.applyFilter(line);
+			if (blnHtml && blnAcademic) {
 				log.groupByIP(line);
 				if (outputQueries && blnQuery) {
 					log.outputQuery(line);

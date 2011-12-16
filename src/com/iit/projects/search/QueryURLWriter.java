@@ -19,13 +19,13 @@ public class QueryURLWriter extends QueryLogWriter {
 			boolean blnQueryFound = false;
 			QueryLogLineFilter queryFilter = new QueryURLFilter();
 			boolean blnQuery = false;
-//			writer.newLine();
+			// writer.newLine();
 			for (QueryLogLine line : lines) {
 				blnQuery = queryFilter.applyFilter(line.getLine());
-//				 if (blnQuery)
-//				 writeQuery(line);
-//				 else
-//				 writeURL(line);
+				// if (blnQuery)
+				// writeQuery(line);
+				// else
+				// writeURL(line);
 				if (!blnQueryFound)
 					if (!blnQuery)
 						continue;
@@ -45,11 +45,8 @@ public class QueryURLWriter extends QueryLogWriter {
 
 	private void writeURL(QueryLogLine line) throws IOException {
 		writeCommonLineDetails(line);
-		if (null != line.getURL()) {
-			writer.write('"');
-			writer.write(line.getURL());
-			writer.write('"');
-		}
+		if (null != line.getURL())
+			writeDoubleQuoted(line.getURL());
 		writer.newLine();
 	}
 
@@ -58,8 +55,14 @@ public class QueryURLWriter extends QueryLogWriter {
 		if (null != query) {
 			writer.newLine();
 			writeCommonLineDetails(line);
-			writer.write(query);
+			writeDoubleQuoted(query);
 			writer.newLine();
 		}
+	}
+
+	private void writeDoubleQuoted(String str) throws IOException {
+		writer.write('"');
+		writer.write(str);
+		writer.write('"');
 	}
 }

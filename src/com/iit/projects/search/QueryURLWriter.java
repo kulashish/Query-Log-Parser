@@ -19,24 +19,24 @@ public class QueryURLWriter extends QueryLogWriter {
 			boolean blnQueryFound = false;
 			QueryLogLineFilter queryFilter = new QueryURLFilter();
 			boolean blnQuery = false;
-			writer.newLine();
+//			writer.newLine();
 			for (QueryLogLine line : lines) {
 				blnQuery = queryFilter.applyFilter(line.getLine());
-				if (blnQuery)
+//				 if (blnQuery)
+//				 writeQuery(line);
+//				 else
+//				 writeURL(line);
+				if (!blnQueryFound)
+					if (!blnQuery)
+						continue;
+					else {
+						blnQueryFound = true;
+						writeQuery(line);
+					}
+				else if (blnQuery)
 					writeQuery(line);
 				else
 					writeURL(line);
-				// if (!blnQueryFound)
-				// if (!blnQuery)
-				// continue;
-				// else {
-				// blnQueryFound = true;
-				// writeQuery(line);
-				// }
-				// else if (blnQuery)
-				// writeQuery(line);
-				// else
-				// writeURL(line);
 			}
 		} catch (IOException e) {
 			throw new QueryLogOutputException(e);
@@ -45,8 +45,11 @@ public class QueryURLWriter extends QueryLogWriter {
 
 	private void writeURL(QueryLogLine line) throws IOException {
 		writeCommonLineDetails(line);
-		if (null != line.getURL())
+		if (null != line.getURL()) {
+			writer.write('"');
 			writer.write(line.getURL());
+			writer.write('"');
+		}
 		writer.newLine();
 	}
 

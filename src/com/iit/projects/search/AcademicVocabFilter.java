@@ -2,8 +2,8 @@ package com.iit.projects.search;
 
 public class AcademicVocabFilter extends QueryLogLineFilter {
 
-	private static final String[] ACADEMIC_WORDS = { ".edu", ".ac.in", "wiki",
-			"wikipedia" };
+	private static final String[] ACADEMIC_WORDS = { ".edu", ".ac.", "wiki",
+			"wikipedia", "googlescholar", "wolfram" };
 
 	public AcademicVocabFilter() {
 		super();

@@ -106,8 +106,8 @@ public class QueryLogLine {
 	}
 
 	public String getQuery() {
-		int startIdx = URL.indexOf("q=") + 2;
-		int endIdx = URL.indexOf('&', startIdx);
+		int startIdx = URL != null ? URL.indexOf("q=") : -1;
+		int endIdx = URL != null ? URL.indexOf('&', startIdx + 2) : -1;
 		return startIdx != -1 ? endIdx != -1 ? URL.substring(startIdx, endIdx)
 				: URL.substring(startIdx) : null;
 	}

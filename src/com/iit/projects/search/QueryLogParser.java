@@ -90,7 +90,7 @@ public class QueryLogParser {
 			blnQuery = queryFilter.applyFilter(line);
 			blnHtml = htmlFilter.applyFilter(line);
 			blnAcademic = academicFilter.applyFilter(line);
-			if (blnHtml && blnAcademic) {
+			if (blnQuery || (blnHtml && blnAcademic)) {
 				log.groupByIP(line);
 				if (outputQueries && blnQuery) {
 					log.outputQuery(line);
